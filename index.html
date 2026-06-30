@@ -76,6 +76,58 @@
     100%{ transform:translateY(820%); }
   }
 
+  /* ============ GLITCH SYSTEM ============ */
+  #appRoot{ position:relative; }
+  body.glitch-active #appRoot{
+    animation:appJitter .35s steps(6,end);
+  }
+  @keyframes appJitter{
+    0%{ transform:translate(0,0); filter:none; }
+    10%{ transform:translate(-2px,1px); }
+    20%{ transform:translate(2px,-1px); filter:hue-rotate(8deg); }
+    30%{ transform:translate(-1px,2px); }
+    40%{ transform:translate(1px,-2px); filter:hue-rotate(-8deg); }
+    50%{ transform:translate(-2px,0); }
+    60%{ transform:translate(2px,1px); }
+    70%{ transform:translate(-1px,-1px); filter:none; }
+    80%{ transform:translate(1px,1px); }
+    90%{ transform:translate(0,-1px); }
+    100%{ transform:translate(0,0); filter:none; }
+  }
+  .glitch-fx{ position:fixed; inset:0; pointer-events:none; z-index:60; opacity:0; }
+  .glitch-fx::before, .glitch-fx::after{ content:''; position:absolute; inset:0; mix-blend-mode:screen; }
+  .glitch-fx::before{ background:repeating-linear-gradient(0deg, rgba(255,0,90,.12) 0 2px, transparent 2px 4px); transform:translateX(-3px); }
+  .glitch-fx::after{ background:repeating-linear-gradient(0deg, rgba(0,230,255,.12) 0 2px, transparent 2px 4px); transform:translateX(3px); }
+  body.glitch-active .glitch-fx{ opacity:1; animation:fxFlicker .35s steps(4,end); }
+  @keyframes fxFlicker{
+    0%,100%{ opacity:0; }
+    15%{ opacity:.9; }
+    35%{ opacity:.2; }
+    55%{ opacity:.8; }
+    75%{ opacity:.1; }
+  }
+
+  /* one-shot settle jitter on a detect-box when it's first classified */
+  @keyframes boxSettle{
+    0%{ transform:translate(0,0); }
+    20%{ transform:translate(-2px,1px); }
+    40%{ transform:translate(2px,-1px); }
+    60%{ transform:translate(-1px,1px); }
+    80%{ transform:translate(1px,-1px); }
+    100%{ transform:translate(0,0); }
+  }
+  .detect-box.in-view{ animation:boxSettle .3s steps(5,end); }
+
+  /* ============ AUDIO TOGGLE ============ */
+  .hud__audio{
+    font-family:var(--font-mono); font-size:.72rem; color:var(--steel);
+    border:1px solid var(--line); padding:.35rem .6rem;
+    transition:color .2s ease, border-color .2s ease;
+    white-space:nowrap;
+  }
+  .hud__audio:hover, .hud__audio:focus-visible{ color:var(--phosphor); border-color:var(--phosphor); }
+  .hud__audio[aria-pressed="true"]{ color:var(--phosphor); border-color:var(--phosphor); }
+
   /* ============ HUD BAR ============ */
   .hud{
     position:fixed; top:0; left:0; right:0; z-index:100;
@@ -122,6 +174,7 @@
     .hud__nav a{ padding:.9rem 1.25rem; border-bottom:1px solid var(--line); width:100%; }
     .hud__status{ display:none; }
     .hud__toggle{ display:block; }
+    .hud__audio{ font-size:.65rem; padding:.3rem .5rem; }
   }
 
   /* ============ DETECT BOX (signature element) ============ */
@@ -312,6 +365,9 @@
     .scanline::before{ animation:none; opacity:.04; }
     .hud__dot{ animation:none; }
     .detect-box .corner, .detect-box__label, .detect-box{ transition-duration:.01s !important; }
+    body.glitch-active #appRoot{ animation:none !important; transform:none !important; filter:none !important; }
+    body.glitch-active .glitch-fx{ animation:none !important; opacity:0 !important; }
+    .detect-box.in-view{ animation:none !important; }
   }
 
 </style>
@@ -320,6 +376,14 @@
 
   <a href="#about" class="skip-link">Skip to content</a>
   <div class="scanline" aria-hidden="true"></div>
+  <div class="glitch-fx" aria-hidden="true"></div>
+
+  <!-- Drop your own royalty-free / licensed track in next to index.html and point this src at it -->
+  <audio id="bgAudio" loop preload="none">
+    <source src="ambient.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="appRoot">
 
   <header class="hud">
     <div class="hud__brand">SYS://<span class="hud__handle">[YOURHANDLE]</span>_PORTFOLIO</div>
@@ -333,6 +397,7 @@
       <span>LIVE</span>
       <span class="hud__clock" id="clock">00:00:00</span>
     </div>
+    <button class="hud__audio" id="audioToggle" aria-label="Toggle background audio" aria-pressed="false">♪ AUDIO: OFF</button>
     <button class="hud__toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
   </header>
 
@@ -438,6 +503,8 @@
     <p>// SYSTEM_STATUS: NOMINAL — BUILT WITH HTML / CSS / JS — © <span id="year"></span> [YOUR NAME]</p>
   </footer>
 
+  </div><!-- /#appRoot -->
+
 <script>
   // Inject corner brackets into every detect-box, then watch for scroll visibility
   document.querySelectorAll('.detect-box').forEach(function(el){
@@ -448,16 +515,75 @@
     });
   });
 
+  // Reduced-motion check, used to gate glitch bursts and text-scramble
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Decrypt-style text scramble for a label, resolving to its real text
+  function scrambleText(el, finalText, duration){
+    duration = duration || 500;
+    if (prefersReducedMotion) { el.textContent = finalText; return; }
+    var chars = '!<>-_\\/[]{}—=+*^?#01';
+    var totalFrames = Math.max(8, Math.floor(duration / 40));
+    var frame = 0;
+    var interval = setInterval(function(){
+      var revealCount = Math.floor((frame / totalFrames) * finalText.length);
+      var out = '';
+      for (var i = 0; i < finalText.length; i++){
+        out += (i < revealCount || finalText[i] === ' ') ? finalText[i] : chars[Math.floor(Math.random() * chars.length)];
+      }
+      el.textContent = out;
+      frame++;
+      if (frame > totalFrames){
+        el.textContent = finalText;
+        clearInterval(interval);
+      }
+    }, 40);
+  }
+
   var observer = new IntersectionObserver(function(entries){
     entries.forEach(function(entry){
       if (entry.isIntersecting) {
         entry.target.classList.add('in-view');
+        var label = entry.target.querySelector('.detect-box__label');
+        if (label) scrambleText(label, label.textContent.trim());
         observer.unobserve(entry.target);
       }
     });
   }, { threshold: 0.18 });
 
   document.querySelectorAll('.detect-box').forEach(function(el){ observer.observe(el); });
+
+  // Random ambient full-screen glitch bursts — off entirely if reduced motion is requested
+  function scheduleGlitch(){
+    var delay = 8000 + Math.random() * 12000; // 8–20s
+    setTimeout(function(){
+      document.body.classList.add('glitch-active');
+      setTimeout(function(){ document.body.classList.remove('glitch-active'); }, 360);
+      scheduleGlitch();
+    }, delay);
+  }
+  if (!prefersReducedMotion) scheduleGlitch();
+
+  // Background audio toggle — defaults off; user supplies their own track at ambient.mp3
+  var audioBtn = document.getElementById('audioToggle');
+  var audioEl = document.getElementById('bgAudio');
+  if (audioBtn && audioEl){
+    audioBtn.addEventListener('click', function(){
+      if (audioEl.paused){
+        audioEl.play().then(function(){
+          audioBtn.textContent = '♪ AUDIO: ON';
+          audioBtn.setAttribute('aria-pressed', 'true');
+        }).catch(function(){
+          audioBtn.textContent = '♪ NO TRACK LOADED';
+          setTimeout(function(){ audioBtn.textContent = '♪ AUDIO: OFF'; }, 1800);
+        });
+      } else {
+        audioEl.pause();
+        audioBtn.textContent = '♪ AUDIO: OFF';
+        audioBtn.setAttribute('aria-pressed', 'false');
+      }
+    });
+  }
 
   // Live clock in the HUD bar
   function tick(){
