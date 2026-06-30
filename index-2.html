@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>[YOUR NAME] — Cloud &amp; AI Platform Architect</title>
+<meta name="description" content="Portfolio of [YOUR NAME], cloud architect building data and AI platforms.">
+<meta name="theme-color" content="#0a0b0d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Hanken+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+
+  /* ============ TOKENS ============ */
+  :root{
+    --void:#0a0b0d;
+    --void-alt:#121417;
+    --panel:#15171b;
+    --line:#23262b;
+    --ghost:#e8e9eb;
+    --steel:#6b7280;
+    --phosphor:#39ff88;
+    --amber:#ffb627;
+    --alert:#ff4545;
+
+    --font-display:'Unbounded', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+    --font-body:'Hanken Grotesk', sans-serif;
+
+    --hud-h:56px;
+  }
+
+  /* ============ RESET ============ */
+  *,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--void);
+    color:var(--ghost);
+    font-family:var(--font-body);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  img{ max-width:100%; display:block; }
+  a{ color:inherit; text-decoration:none; }
+  ul{ list-style:none; }
+  button{ font:inherit; background:none; border:none; color:inherit; cursor:pointer; }
+
+  :focus-visible{
+    outline:2px solid var(--phosphor);
+    outline-offset:3px;
+  }
+
+  .skip-link{
+    position:absolute; left:-9999px; top:0;
+    background:var(--phosphor); color:var(--void);
+    padding:.6rem 1rem; font-family:var(--font-mono); font-size:.8rem;
+    z-index:200;
+  }
+  .skip-link:focus{ left:1rem; top:1rem; }
+
+  /* ============ SCANLINE ============ */
+  .scanline{
+    position:fixed; inset:0; pointer-events:none; z-index:5;
+    overflow:hidden;
+  }
+  .scanline::before{
+    content:'';
+    position:absolute; left:0; right:0; top:-10%;
+    height:14%;
+    background:linear-gradient(to bottom, transparent, rgba(57,255,136,.05) 45%, rgba(57,255,136,.08) 50%, rgba(57,255,136,.05) 55%, transparent);
+    animation:sweep 7s linear infinite;
+  }
+  @keyframes sweep{
+    0%{ transform:translateY(-20%); }
+    100%{ transform:translateY(820%); }
+  }
+
+  /* ============ GLITCH SYSTEM ============ */
+  #appRoot{ position:relative; }
+  body.glitch-active #appRoot{
+    animation:appJitter .35s steps(6,end);
+  }
+  @keyframes appJitter{
+    0%{ transform:translate(0,0); filter:none; }
+    10%{ transform:translate(-2px,1px); }
+    20%{ transform:translate(2px,-1px); filter:hue-rotate(8deg); }
+    30%{ transform:translate(-1px,2px); }
+    40%{ transform:translate(1px,-2px); filter:hue-rotate(-8deg); }
+    50%{ transform:translate(-2px,0); }
+    60%{ transform:translate(2px,1px); }
+    70%{ transform:translate(-1px,-1px); filter:none; }
+    80%{ transform:translate(1px,1px); }
+    90%{ transform:translate(0,-1px); }
+    100%{ transform:translate(0,0); filter:none; }
+  }
+  .glitch-fx{ position:fixed; inset:0; pointer-events:none; z-index:60; opacity:0; }
+  .glitch-fx::before, .glitch-fx::after{ content:''; position:absolute; inset:0; mix-blend-mode:screen; }
+  .glitch-fx::before{ background:repeating-linear-gradient(0deg, rgba(255,0,90,.12) 0 2px, transparent 2px 4px); transform:translateX(-3px); }
+  .glitch-fx::after{ background:repeating-linear-gradient(0deg, rgba(0,230,255,.12) 0 2px, transparent 2px 4px); transform:translateX(3px); }
+  body.glitch-active .glitch-fx{ opacity:1; animation:fxFlicker .35s steps(4,end); }
+  @keyframes fxFlicker{
+    0%,100%{ opacity:0; }
+    15%{ opacity:.9; }
+    35%{ opacity:.2; }
+    55%{ opacity:.8; }
+    75%{ opacity:.1; }
+  }
+
+  /* one-shot settle jitter on a detect-box when it's first classified */
+  @keyframes boxSettle{
+    0%{ transform:translate(0,0); }
+    20%{ transform:translate(-2px,1px); }
+    40%{ transform:translate(2px,-1px); }
+    60%{ transform:translate(-1px,1px); }
+    80%{ transform:translate(1px,-1px); }
+    100%{ transform:translate(0,0); }
+  }
+  .detect-box.in-view{ animation:boxSettle .3s steps(5,end); }
+
+  /* ============ AUDIO TOGGLE ============ */
+  .hud__audio{
+    font-family:var(--font-mono); font-size:.72rem; color:var(--steel);
+    border:1px solid var(--line); padding:.35rem .6rem;
+    transition:color .2s ease, border-color .2s ease;
+    white-space:nowrap;
+  }
+  .hud__audio:hover, .hud__audio:focus-visible{ color:var(--phosphor); border-color:var(--phosphor); }
+  .hud__audio[aria-pressed="true"]{ color:var(--phosphor); border-color:var(--phosphor); }
+
+  /* ============ HUD BAR ============ */
+  .hud{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    height:var(--hud-h);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 1.25rem;
+    background:rgba(10,11,13,.85);
+    backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+    font-family:var(--font-mono);
+    font-size:.75rem;
+    letter-spacing:.02em;
+  }
+  .hud__brand{ color:var(--steel); white-space:nowrap; }
+  .hud__handle{ color:var(--phosphor); }
+  .hud__nav{ display:flex; gap:1.75rem; }
+  .hud__nav a{
+    color:var(--steel);
+    padding:.4rem 0;
+    border-bottom:1px solid transparent;
+    transition:color .2s ease, border-color .2s ease;
+  }
+  .hud__nav a:hover, .hud__nav a:focus-visible{ color:var(--phosphor); border-color:var(--phosphor); }
+  .hud__status{ display:flex; align-items:center; gap:.5rem; color:var(--steel); }
+  .hud__dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--alert);
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.25; } }
+  .hud__clock{ color:var(--ghost); min-width:5.5em; }
+  .hud__toggle{ display:none; font-size:1.1rem; color:var(--ghost); }
+
+  @media (max-width:760px){
+    .hud__nav{
+      position:fixed; top:var(--hud-h); left:0; right:0;
+      flex-direction:column; gap:0;
+      background:var(--void-alt);
+      border-bottom:1px solid var(--line);
+      max-height:0; overflow:hidden;
+      transition:max-height .25s ease;
+    }
+    .hud__nav.is-open{ max-height:200px; }
+    .hud__nav a{ padding:.9rem 1.25rem; border-bottom:1px solid var(--line); width:100%; }
+    .hud__status{ display:none; }
+    .hud__toggle{ display:block; }
+    .hud__audio{ font-size:.65rem; padding:.3rem .5rem; }
+  }
+
+  /* ============ DETECT BOX (signature element) ============ */
+  .detect-box{
+    --box-color:var(--phosphor);
+    position:relative;
+    border:1px solid transparent;
+    transition:border-color .5s ease, background-color .5s ease;
+  }
+  .detect-box.in-view{
+    border-color:color-mix(in srgb, var(--box-color) 35%, transparent);
+    background-color:rgba(255,255,255,.012);
+  }
+  .detect-box .corner{
+    position:absolute;
+    width:16px; height:16px;
+    opacity:0;
+    transition:opacity .35s ease, transform .35s ease;
+    transition-delay:.05s;
+  }
+  .detect-box.in-view .corner{ opacity:1; transform:translate(0,0) !important; }
+  .corner--tl{ top:-1px; left:-1px; border-top:2px solid var(--box-color); border-left:2px solid var(--box-color); transform:translate(-6px,-6px); }
+  .corner--tr{ top:-1px; right:-1px; border-top:2px solid var(--box-color); border-right:2px solid var(--box-color); transform:translate(6px,-6px); }
+  .corner--bl{ bottom:-1px; left:-1px; border-bottom:2px solid var(--box-color); border-left:2px solid var(--box-color); transform:translate(-6px,6px); }
+  .corner--br{ bottom:-1px; right:-1px; border-bottom:2px solid var(--box-color); border-right:2px solid var(--box-color); transform:translate(6px,6px); }
+
+  .detect-box__label{
+    display:inline-block;
+    font-family:var(--font-mono);
+    font-size:.68rem;
+    letter-spacing:.03em;
+    color:var(--box-color);
+    background:var(--void);
+    border:1px solid var(--box-color);
+    padding:.25rem .55rem;
+    position:absolute;
+    top:-12px; left:14px;
+    opacity:0; transform:translateY(4px);
+    transition:opacity .4s ease .15s, transform .4s ease .15s;
+    white-space:nowrap;
+  }
+  .detect-box.in-view .detect-box__label{ opacity:1; transform:translateY(0); }
+
+  /* ============ LAYOUT WRAPPERS ============ */
+  main{ padding-top:var(--hud-h); }
+  section{ padding:5.5rem 1.5rem; max-width:1080px; margin:0 auto; }
+  .section-title{
+    font-family:var(--font-display);
+    font-weight:700;
+    font-size:clamp(1.3rem,2.6vw,1.8rem);
+    letter-spacing:.02em;
+    margin-bottom:2rem;
+    display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap;
+  }
+  .section-title__meta{
+    font-family:var(--font-mono); font-weight:400; font-size:.75rem;
+    color:var(--steel);
+  }
+  .section-box{ padding:2.5rem clamp(1.25rem,4vw,3rem); }
+
+  /* ============ HERO ============ */
+  .hero{
+    min-height:calc(100svh - var(--hud-h));
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; position:relative; padding:3rem 1.5rem;
+  }
+  .hero__grid{
+    position:absolute; inset:0; z-index:-1;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:42px 42px;
+    -webkit-mask-image:radial-gradient(ellipse 65% 55% at 50% 45%, black 30%, transparent 75%);
+    mask-image:radial-gradient(ellipse 65% 55% at 50% 45%, black 30%, transparent 75%);
+    opacity:.6;
+  }
+  .hero__box{ padding:2.5rem clamp(1.5rem,5vw,4rem); max-width:780px; }
+  .hero__name{
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:clamp(2.4rem,7vw,4.6rem);
+    line-height:1.05;
+    letter-spacing:-.01em;
+    margin-bottom:1.1rem;
+  }
+  .hero__tagline{
+    font-size:clamp(1rem,1.6vw,1.15rem);
+    color:var(--ghost);
+    max-width:46ch;
+    margin:0 auto 2rem;
+  }
+  .hero__company{ color:var(--phosphor); font-weight:600; }
+  .hero__actions{ display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; }
+
+  .btn{
+    font-family:var(--font-mono); font-size:.8rem; letter-spacing:.03em;
+    padding:.85rem 1.4rem; border:1px solid var(--line);
+    transition:border-color .2s ease, color .2s ease, background-color .2s ease;
+  }
+  .btn--primary{ border-color:var(--phosphor); color:var(--phosphor); }
+  .btn--primary:hover{ background:var(--phosphor); color:var(--void); }
+  .btn--ghost{ color:var(--steel); }
+  .btn--ghost:hover{ color:var(--ghost); border-color:var(--steel); }
+
+  .hero__scroll{
+    position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
+    font-family:var(--font-mono); font-size:.7rem; color:var(--steel);
+    letter-spacing:.05em;
+  }
+
+  /* ============ ABOUT ============ */
+  .about__text{ max-width:68ch; color:var(--ghost); margin-bottom:2rem; }
+  .skills{ display:flex; flex-wrap:wrap; gap:.6rem; }
+  .skill{
+    font-family:var(--font-mono); font-size:.72rem;
+    border:1px solid var(--line); padding:.45rem .7rem;
+    color:var(--steel); letter-spacing:.02em;
+  }
+  .skill b{ color:var(--phosphor); font-weight:500; margin-left:.4em; }
+
+  /* ============ PROJECTS ============ */
+  .projects__grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(280px,1fr));
+    gap:1.75rem;
+  }
+  .project-card{ padding:1.5rem 1.25rem 1.75rem; display:flex; flex-direction:column; }
+  .project-card__viz{
+    height:96px;
+    margin:1.1rem -1.25rem 1.25rem;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:13px 13px;
+    background-color:var(--void);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    position:relative; overflow:hidden;
+  }
+  .project-card__viz::after{
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(circle at var(--vx,30%) var(--vy,40%), color-mix(in srgb, var(--box-color) 22%, transparent), transparent 60%);
+  }
+  .project-card h3{
+    font-family:var(--font-display); font-weight:700; font-size:1.05rem;
+    margin-bottom:.6rem; line-height:1.3;
+  }
+  .project-card p{ color:var(--steel); font-size:.9rem; margin-bottom:1.1rem; flex-grow:1; }
+  .tags{ display:flex; flex-wrap:wrap; gap:.4rem; margin-bottom:1.1rem; }
+  .tags span{
+    font-family:var(--font-mono); font-size:.65rem;
+    border:1px solid var(--line); padding:.25rem .5rem; color:var(--steel);
+  }
+  .project-link{
+    font-family:var(--font-mono); font-size:.78rem; color:var(--box-color);
+    align-self:flex-start;
+    border-bottom:1px solid transparent;
+    transition:border-color .2s ease;
+  }
+  .project-link:hover, .project-link:focus-visible{ border-color:var(--box-color); }
+
+  .status-deployed{ --box-color:var(--phosphor); }
+  .status-progress{ --box-color:var(--amber); }
+  .status-planned{ --box-color:var(--steel); }
+
+  /* ============ CONTACT ============ */
+  .contact__text{ color:var(--ghost); margin-bottom:1.75rem; max-width:60ch; }
+  .contact__links{ display:flex; flex-wrap:wrap; gap:.9rem; }
+  .contact__link{
+    font-family:var(--font-mono); font-size:.82rem;
+    border:1px solid var(--line); padding:.75rem 1.1rem;
+    transition:border-color .2s ease, color .2s ease;
+    color:var(--ghost);
+  }
+  .contact__link:hover, .contact__link:focus-visible{ border-color:var(--phosphor); color:var(--phosphor); }
+
+  /* ============ FOOTER ============ */
+  .footer{
+    border-top:1px solid var(--line);
+    padding:1.75rem 1.5rem;
+    text-align:center;
+    font-family:var(--font-mono); font-size:.72rem; color:var(--steel);
+  }
+
+  /* ============ REDUCED MOTION ============ */
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .scanline::before{ animation:none; opacity:.04; }
+    .hud__dot{ animation:none; }
+    .detect-box .corner, .detect-box__label, .detect-box{ transition-duration:.01s !important; }
+    body.glitch-active #appRoot{ animation:none !important; transform:none !important; filter:none !important; }
+    body.glitch-active .glitch-fx{ animation:none !important; opacity:0 !important; }
+    .detect-box.in-view{ animation:none !important; }
+  }
+
+</style>
+</head>
+<body>
+
+  <a href="#about" class="skip-link">Skip to content</a>
+  <div class="scanline" aria-hidden="true"></div>
+  <div class="glitch-fx" aria-hidden="true"></div>
+
+  <!-- Drop your own royalty-free / licensed track in next to index.html and point this src at it -->
+  <audio id="bgAudio" loop preload="none">
+    <source src="ambient.mp3" type="audio/mpeg">
+  </audio>
+
+  <div id="appRoot">
+
+  <header class="hud">
+    <div class="hud__brand">SYS://<span class="hud__handle">[YOURHANDLE]</span>_PORTFOLIO</div>
+    <nav class="hud__nav" id="hudNav">
+      <a href="#about">01_ABOUT</a>
+      <a href="#projects">02_PROJECTS</a>
+      <a href="#contact">03_CONTACT</a>
+    </nav>
+    <div class="hud__status">
+      <span class="hud__dot" aria-hidden="true"></span>
+      <span>LIVE</span>
+      <span class="hud__clock" id="clock">00:00:00</span>
+    </div>
+    <button class="hud__audio" id="audioToggle" aria-label="Toggle background audio" aria-pressed="false">♪ AUDIO: OFF</button>
+    <button class="hud__toggle" id="navToggle" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  </header>
+
+  <main>
+
+    <section class="hero" id="top">
+      <div class="hero__grid" aria-hidden="true"></div>
+      <div class="detect-box hero__box">
+        <span class="detect-box__label">CLASS: CLOUD_&amp;_AI_ARCHITECT — CONF: 98.7%</span>
+        <h1 class="hero__name">[YOUR NAME]</h1>
+        <p class="hero__tagline">Designing cloud &amp; AI platforms that scale — currently building data and ML systems on the cloud architecture team at <span class="hero__company">Gallagher GTS</span>.</p>
+        <div class="hero__actions">
+          <a href="#projects" class="btn btn--primary">VIEW_PROJECTS →</a>
+          <a href="resume.pdf" class="btn btn--ghost" download>↓ RESUME.PDF</a>
+        </div>
+      </div>
+      <div class="hero__scroll">SCROLL TO INSPECT ▾</div>
+    </section>
+
+    <section id="about">
+      <div class="detect-box section-box">
+        <span class="detect-box__label">[ABOUT — IDENTITY_DATA — 99.2%]</span>
+        <h2 class="section-title">// ABOUT</h2>
+        <p class="about__text">
+          [Write 2–4 sentences here about your background and focus. Example: I'm a cloud architect on the
+          Cloud Architecture team at Gallagher GTS, where I design infrastructure for data and AI platforms —
+          from governed lakehouse foundations to ML-powered reporting. I care about building systems that are
+          automated, observable, and easy for the next engineer to reason about.]
+        </p>
+        <div class="skills">
+          <span class="skill">AZURE <b>96%</b></span>
+          <span class="skill">AZURE ML <b>91%</b></span>
+          <span class="skill">POWER BI <b>89%</b></span>
+          <span class="skill">PYTHON <b>88%</b></span>
+          <span class="skill">DATA ARCHITECTURE <b>93%</b></span>
+          <span class="skill">TERRAFORM <b>84%</b></span>
+          <span class="skill">MLOPS <b>87%</b></span>
+          <span class="skill">FINOPS <b>80%</b></span>
+        </div>
+      </div>
+    </section>
+
+    <section id="projects">
+      <h2 class="section-title">// PROJECTS <span class="section-title__meta">[DETECTED: 4 OBJECTS]</span></h2>
+      <div class="projects__grid">
+
+        <article class="detect-box project-card status-progress">
+          <span class="detect-box__label">PROJECT_01 — IN_PROGRESS — 94.1%</span>
+          <div class="project-card__viz" style="--vx:25%; --vy:35%;" aria-hidden="true"></div>
+          <h3>Planview Timesheet Intelligence</h3>
+          <p>Power BI reporting on Planview timesheet data with automated scheduled refresh and Azure ML–powered forecasting and anomaly detection on resource utilization.</p>
+          <div class="tags"><span>Power BI</span><span>Azure ML</span><span>OData API</span></div>
+          <a href="#" class="project-link">VIEW_REPO →</a>
+        </article>
+
+        <article class="detect-box project-card status-planned">
+          <span class="detect-box__label">PROJECT_02 — PLANNED — 88.0%</span>
+          <div class="project-card__viz" style="--vx:70%; --vy:30%;" aria-hidden="true"></div>
+          <h3>MLOps Reference Architecture</h3>
+          <p>End-to-end model serving pattern: Azure ML training and registry, containerized scoring behind API Management, and a CI/CD pipeline with promotion gates across dev/test/prod.</p>
+          <div class="tags"><span>Azure ML</span><span>API Management</span><span>CI/CD</span></div>
+          <a href="#" class="project-link">VIEW_REPO →</a>
+        </article>
+
+        <article class="detect-box project-card status-planned">
+          <span class="detect-box__label">PROJECT_03 — PLANNED — 85.6%</span>
+          <div class="project-card__viz" style="--vx:40%; --vy:65%;" aria-hidden="true"></div>
+          <h3>RAG Knowledge Platform</h3>
+          <p>Retrieval-augmented architecture over claims and underwriting documentation — chunking and embedding pipeline, vector search, and an orchestration layer for internal Q&amp;A.</p>
+          <div class="tags"><span>Azure AI Search</span><span>Vector DB</span><span>LLM Orchestration</span></div>
+          <a href="#" class="project-link">VIEW_REPO →</a>
+        </article>
+
+        <article class="detect-box project-card status-deployed">
+          <span class="detect-box__label">PROJECT_04 — DEPLOYED — 96.8%</span>
+          <div class="project-card__viz" style="--vx:60%; --vy:60%;" aria-hidden="true"></div>
+          <h3>FinOps for AI Workloads</h3>
+          <p>Tagging, showback, and budget-alert policies scoped to ML compute — idle endpoint detection, autoscale-to-zero inference, and spot compute for training jobs.</p>
+          <div class="tags"><span>Azure Cost Mgmt</span><span>Tagging Policy</span><span>Automation</span></div>
+          <a href="#" class="project-link">VIEW_REPO →</a>
+        </article>
+
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="detect-box section-box">
+        <span class="detect-box__label">[CONTACT — UPLINK_CHANNELS — 99.9%]</span>
+        <h2 class="section-title">// CONTACT</h2>
+        <p class="contact__text">Open to conversations about cloud architecture, data platforms, and applied ML. Reach out through any of these:</p>
+        <div class="contact__links">
+          <a href="mailto:you@example.com" class="contact__link">EMAIL →</a>
+          <a href="https://linkedin.com/in/yourprofile" class="contact__link">LINKEDIN →</a>
+          <a href="https://github.com/yourusername" class="contact__link">GITHUB →</a>
+          <a href="resume.pdf" class="contact__link" download>RESUME.PDF →</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>// SYSTEM_STATUS: NOMINAL — BUILT WITH HTML / CSS / JS — © <span id="year"></span> [YOUR NAME]</p>
+  </footer>
+
+  </div><!-- /#appRoot -->
+
+<script>
+  // Inject corner brackets into every detect-box, then watch for scroll visibility
+  document.querySelectorAll('.detect-box').forEach(function(el){
+    ['tl','tr','bl','br'].forEach(function(pos){
+      var span = document.createElement('span');
+      span.className = 'corner corner--' + pos;
+      el.appendChild(span);
+    });
+  });
+
+  // Reduced-motion check, used to gate glitch bursts and text-scramble
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Decrypt-style text scramble for a label, resolving to its real text
+  function scrambleText(el, finalText, duration){
+    duration = duration || 500;
+    if (prefersReducedMotion) { el.textContent = finalText; return; }
+    var chars = '!<>-_\\/[]{}—=+*^?#01';
+    var totalFrames = Math.max(8, Math.floor(duration / 40));
+    var frame = 0;
+    var interval = setInterval(function(){
+      var revealCount = Math.floor((frame / totalFrames) * finalText.length);
+      var out = '';
+      for (var i = 0; i < finalText.length; i++){
+        out += (i < revealCount || finalText[i] === ' ') ? finalText[i] : chars[Math.floor(Math.random() * chars.length)];
+      }
+      el.textContent = out;
+      frame++;
+      if (frame > totalFrames){
+        el.textContent = finalText;
+        clearInterval(interval);
+      }
+    }, 40);
+  }
+
+  var observer = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        var label = entry.target.querySelector('.detect-box__label');
+        if (label) scrambleText(label, label.textContent.trim());
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.18 });
+
+  document.querySelectorAll('.detect-box').forEach(function(el){ observer.observe(el); });
+
+  // Random ambient full-screen glitch bursts — off entirely if reduced motion is requested
+  function scheduleGlitch(){
+    var delay = 8000 + Math.random() * 12000; // 8–20s
+    setTimeout(function(){
+      document.body.classList.add('glitch-active');
+      setTimeout(function(){ document.body.classList.remove('glitch-active'); }, 360);
+      scheduleGlitch();
+    }, delay);
+  }
+  if (!prefersReducedMotion) scheduleGlitch();
+
+  // Background audio toggle — defaults off; user supplies their own track at ambient.mp3
+  var audioBtn = document.getElementById('audioToggle');
+  var audioEl = document.getElementById('bgAudio');
+  if (audioBtn && audioEl){
+    audioBtn.addEventListener('click', function(){
+      if (audioEl.paused){
+        audioEl.play().then(function(){
+          audioBtn.textContent = '♪ AUDIO: ON';
+          audioBtn.setAttribute('aria-pressed', 'true');
+        }).catch(function(){
+          audioBtn.textContent = '♪ NO TRACK LOADED';
+          setTimeout(function(){ audioBtn.textContent = '♪ AUDIO: OFF'; }, 1800);
+        });
+      } else {
+        audioEl.pause();
+        audioBtn.textContent = '♪ AUDIO: OFF';
+        audioBtn.setAttribute('aria-pressed', 'false');
+      }
+    });
+  }
+
+  // Live clock in the HUD bar
+  function tick(){
+    var el = document.getElementById('clock');
+    if (!el) return;
+    el.textContent = new Date().toTimeString().slice(0,8);
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // Footer year
+  var yearEl = document.getElementById('year');
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+  // Mobile nav toggle
+  var toggle = document.getElementById('navToggle');
+  var nav = document.getElementById('hudNav');
+  if (toggle && nav) {
+    toggle.addEventListener('click', function(){
+      var open = nav.classList.toggle('is-open');
+      toggle.setAttribute('aria-expanded', open);
+    });
+    nav.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){
+        nav.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', false);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
